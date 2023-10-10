@@ -28,3 +28,7 @@ Run this command to clone the java datasets. The default is the first 100 repos,
 
 Step 4:
 Your result is ready on `final_result.txt` file.
+
+Dependencies:
+
+Just Pandas, all versions are almost ok.

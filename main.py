@@ -118,8 +118,8 @@ def produce_results():
 
 
 if __name__ == '__main__':
-    # clone_repos(filtered_series)
-    # run_designite()   
+    clone_repos(filtered_series)
+    run_designite()   
     result, smell_types = produce_results()
     
     with open('final_result.txt', 'w') as f:
