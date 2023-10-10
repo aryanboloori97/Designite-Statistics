@@ -5,6 +5,8 @@ import zipfile
 import os
 import getopt
 import sys
+import gzip
+import shutil
 
 class DownloadFile(object):
 
@@ -86,8 +88,7 @@ class DownloadFile(object):
                         with requests.get(url, stream=True) as r:
                             r.raise_for_status()
                             total = int(r.headers.get('content-length', 0))
-                            
-                        # tqdm has many interesting parameters. Feel free to experiment!
+                        
                             tqdm_params = {
                                     
                                     'total': total,
@@ -107,19 +108,43 @@ class DownloadFile(object):
                 print("Downloading the file...")
                 req = requests.get(url)
                 f.write(req.content)
-                
+        
+    @staticmethod
+    def unzip_gz(file_path, *, keep_original=True):
+        file_path = Path(file_path)
+        new_path = Path(f'{file_path.parent}/{file_path.stem}')
+        if not new_path.exists():
+            print(f'----- > file "./{file_path.parent}/{file_path.stem}" does not exists!')
+            print(f'----- > Extracting file "./{file_path}" to "./{file_path.parent}/{file_path.stem}"... ')
+            
+             
+
+            with gzip.open(file_path, 'rb') as f_in:
+                with open(new_path, 'wb') as f_out:
+                    shutil.copyfileobj(f_in, f_out)
+            if not keep_original:
+                print(f' ---- > Removing "{file_path}"...')
+                os.remove(file_path)
+            
+            
+        
                 
 if __name__ == '__main__':
     
-    help = "Please provide flags in this format: -u <url> -f <folder_name> -d -o\
-    \n -h or --help: Show help\
-    \n -u or --url : URL which you can download your file from\
+    help = "Please provide flags in this format:\n [-h] | [-u <url> -f <folder_name>  -d -o] | [-uz <file_path>] | [-ug <file_path>]\
+    \n [-h or --help: Show help]\
+    \n [-u or --url : URL which you can download your file from\
     \n -f or --folder_name: folder name to which the downloaded file will be stored\
     \n -d or --duplicate: if passed, in case the file already exists, new one with counting() will be downloaded and saved\
-    \n -o or --overwrite: if passed, in case the file already exists, new one will be overwritten on the current one"
+    \n -o or --overwrite: if passed, in case the file already exists, new one will be overwritten on the current one]\
+    \n [-u or --unzip: unzip the ordinary zip file]\
+    \n [-g or --unzipgz: unzip gz file]\
+    "
     
     try:
-        opts, _ = getopt.getopt(sys.argv[1:], 'hu:f:do', ['help','url', 'folder', 'duplicate', 'overwrite'])
+      
+        opts, _ = getopt.getopt(sys.argv[1:], 'hu:f:u:g:do', ['help','url', 'folder', 'unzip', 'unzipgz', 'duplicate', 'overwrite'])
+      
     except:
         print('Unexpected flag!')
         print(help)
@@ -128,6 +153,9 @@ if __name__ == '__main__':
     url = None
     duplicate = False
     overwrite = False
+    zip_path = False
+    zip_gz_path = False
+    print(opts)
     for opt, arg in opts:
         
         if opt in ('-u', '--url'):
@@ -138,17 +166,28 @@ if __name__ == '__main__':
             duplicate = True
         elif opt in ('-o', '--overwrite'):
             overwrite = True
+        elif opt in ('-u', '--unzip'):
+            zip_path = arg
+        elif opt in ('-g', '--unzipgz'):
+            zip_gz_path = arg
         elif opt in ('-h', '--help'):
             print(help)
             sys.exit()
 
             
-    if not url:
-        print('Please pass URL flag like this: -u <url> or --url <url>')
-        sys.exit(2)
+
     if (overwrite and duplicate):
         print('Both overwrite and duplicate cannot be true!')
         sys.exit(2) 
+    
+    if zip_path:
+        DownloadFile.unzip(zip_path)
+    
+        
+    if zip_gz_path:
+        DownloadFile.unzip_gz(zip_gz_path)
+    
+    
     try:
         DownloadFile.download(url, folder_name=folder_name, duplicate=duplicate, overwrite=overwrite)
     except:
