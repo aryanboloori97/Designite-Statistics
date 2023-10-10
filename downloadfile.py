@@ -16,49 +16,53 @@ class DownloadFile(object):
        
     @staticmethod
     def download(url, *, file_name='', folder_name='Data', overwrite=False, duplicate=False, progress_bar=True):
+        if DownloadFile.check_address_validity(url):
         
-        if overwrite and duplicate:
-            raise BaseException("Overwrite and duplicate arguments cannot be true simlutaneously!")
+        
+            if overwrite and duplicate:
+                raise BaseException("Overwrite and duplicate arguments cannot be true simlutaneously!")
 
-        if not file_name:
-            file_name = url.split('/')[-1][:-4]
-        
-        # Set Folder path
-        folder_path = Path(f'./{folder_name}/')
-        file_name_with_postfix = f"{file_name}.{url.split('/')[-1].split('.')[-1]}"
-        file_path = folder_path / file_name_with_postfix
+            if not file_name:
+                file_name = url.split('/')[-1][:-4]
 
-        if folder_path.is_dir():
-            print(f'----- > Folder "./{folder_name}" already exists')
-        else:
-            print(f'----- > Folder "./{folder_name}"  not found....')
-            print(f'----- > creating "./{folder_name}"')
-            folder_path.mkdir(parents=True, exist_ok=True)
+            # Set Folder path
+            folder_path = Path(f'./{folder_name}/')
+            file_name_with_postfix = f"{file_name}.{url.split('/')[-1].split('.')[-1]}"
+            file_path = folder_path / file_name_with_postfix
 
-        
-        flag = ''
-        
-        if file_path.exists():
-            currents = [entry.name for entry in os.scandir(folder_path) if entry.name[0:len(file_name)] == file_path.stem]
-            flag = len(currents)
-        
-        file_postfix = url.split('/')[-1].split('.')[-1]
-        
-        if not flag=='': 
-            
-            if duplicate:
-                print(f'----- > File "./{file_path}" already exists...making duplicates')
-                file_path = folder_path / f'{file_name}({flag}).{file_postfix}'
-                print(f'----- > New file : "./{file_path}"')
-                DownloadFile.download_from_url_(url, file_path, progress_bar=progress_bar)
-            elif overwrite:
-                print(f'----- > "{file_path}" already exists....removing the current one and overwrite the new one')
-                os.remove(file_path)
-                DownloadFile.download_from_url_(url, file_path, progress_bar=progress_bar)
+            if folder_path.is_dir():
+                print(f'----- > Folder "./{folder_name}" already exists')
             else:
-                print(f'----- > File "{file_path}" already exsists')
+                print(f'----- > Folder "./{folder_name}"  not found....')
+                print(f'----- > creating "./{folder_name}"')
+                folder_path.mkdir(parents=True, exist_ok=True)
+
+
+            flag = ''
+
+            if file_path.exists():
+                currents = [entry.name for entry in os.scandir(folder_path) if entry.name[0:len(file_name)] == file_path.stem]
+                flag = len(currents)
+
+            file_postfix = url.split('/')[-1].split('.')[-1]
+
+            if not flag=='': 
+
+                if duplicate:
+                    print(f'----- > File "./{file_path}" already exists...making duplicates')
+                    file_path = folder_path / f'{file_name}({flag}).{file_postfix}'
+                    print(f'----- > New file : "./{file_path}"')
+                    DownloadFile.download_from_url_(url, file_path, progress_bar=progress_bar)
+                elif overwrite:
+                    print(f'----- > "{file_path}" already exists....removing the current one and overwrite the new one')
+                    os.remove(file_path)
+                    DownloadFile.download_from_url_(url, file_path, progress_bar=progress_bar)
+                else:
+                    print(f'----- > File "{file_path}" already exsists')
+            else:
+                DownloadFile.download_from_url_(url, file_path, progress_bar=progress_bar)
         else:
-            DownloadFile.download_from_url_(url, file_path, progress_bar=progress_bar)
+            print(f'Address:{url} not valid - maybe 404 error - Stopped')
             
     
     @staticmethod
@@ -84,25 +88,27 @@ class DownloadFile(object):
     def download_from_url_(url, file_path, progress_bar=True):
         if progress_bar:
             with open(file_path, 'wb') as f:
-                        print('----- > Downloading the file...')
-                        with requests.get(url, stream=True) as r:
-                            r.raise_for_status()
-                            total = int(r.headers.get('content-length', 0))
-                        
-                            tqdm_params = {
-                                    
-                                    'total': total,
-                                    'miniters': 1,
-                                    'unit': 'B',
-                                    'unit_scale': True,
-                                    'unit_divisor': 1024,
-                                }
-                            with tqdm(**tqdm_params) as pb:
-                                for chunk in r.iter_content(chunk_size=8192):
-                                    pb.update(len(chunk))
-                                    f.write(chunk)
-                        print(f'----- > Completed!')
-                        print(f'----- > New File saved at ./{file_path}')
+                print('----- > Downloading the file...')
+                
+                with requests.get(url, stream=True) as r:
+                    r.raise_for_status()
+                    total = int(r.headers.get('content-length', 0))
+
+                    tqdm_params = {
+
+                            'total': total,
+                            'miniters': 1,
+                            'unit': 'B',
+                            'unit_scale': True,
+                            'unit_divisor': 1024,
+                        }
+                    with tqdm(**tqdm_params) as pb:
+                        for chunk in r.iter_content(chunk_size=8192):
+                            pb.update(len(chunk))
+                            f.write(chunk)
+                print(f'----- > Completed!')
+                print(f'----- > New File saved at ./{file_path}')
+
         else:
             with open(file_path, 'wb') as f:
                 print("Downloading the file...")
@@ -125,8 +131,14 @@ class DownloadFile(object):
             if not keep_original:
                 print(f' ---- > Removing "{file_path}"...')
                 os.remove(file_path)
-            
-            
+    @staticmethod
+    def check_address_validity(url):
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            return True
+        except:
+            return False
         
                 
 if __name__ == '__main__':
@@ -155,7 +167,6 @@ if __name__ == '__main__':
     overwrite = False
     zip_path = False
     zip_gz_path = False
-    print(opts)
     for opt, arg in opts:
         
         if opt in ('-u', '--url'):
@@ -188,7 +199,8 @@ if __name__ == '__main__':
         DownloadFile.unzip_gz(zip_gz_path)
     
     
-    try:
-        DownloadFile.download(url, folder_name=folder_name, duplicate=duplicate, overwrite=overwrite)
-    except:
-        pass
+    if url: 
+        try:
+            DownloadFile.download(url, folder_name=folder_name, duplicate=duplicate, overwrite=overwrite)
+        except:
+            pass
