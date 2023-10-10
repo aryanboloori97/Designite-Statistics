@@ -32,3 +32,5 @@ Your result is ready on `final_result.txt` file.
 Dependencies:
 
 Just Pandas, all versions are almost ok.
+
+NOTE**\*\*** : After running `main.py` if a github asked you username just click enter and skip it. Some repos are maybe private.
