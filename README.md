@@ -33,4 +33,4 @@ Dependencies:
 
 Just Pandas, all versions are almost ok.
 
-NOTE**\*\*** : After running `main.py` if a github asked you username just click enter and skip it. Some repos are maybe private.
+NOTE**\*\*** : After running `main.py` if github asked you username and password just click enter and skip it. Some repos are maybe private.
